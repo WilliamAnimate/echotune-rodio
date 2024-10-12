@@ -147,7 +147,7 @@ impl<R: Read + Seek> DecoderImpl<R> {
     }
 
     #[inline]
-    fn total_duration(&self) -> Option<Duration> {
+    pub fn total_duration(&self) -> Option<Duration> {
         match self {
             #[cfg(all(feature = "wav", not(feature = "symphonia-wav")))]
             DecoderImpl::Wav(source) => source.total_duration(),
