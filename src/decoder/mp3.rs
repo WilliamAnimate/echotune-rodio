@@ -74,16 +74,13 @@ where
 
     fn try_seek(&mut self, pos: Duration) -> Result<(), SeekError> {
         // TODO waiting for PR in minimp3_fixed or minimp3
+        // nah xd :3
 
-        // let pos = (pos.as_secs_f32() * self.sample_rate() as f32) as u64;
-        // // do not trigger a sample_rate, channels and frame len update
-        // // as the seek only takes effect after the current frame is done
-        // self.decoder.seek_samples(pos)?;
-        // Ok(())
-
-        Err(SeekError::NotSupported {
-            underlying_source: std::any::type_name::<Self>(),
-        })
+        let pos = (pos.as_secs_f32() * self.sample_rate() as f32) as u64;
+        // do not trigger a sample_rate, channels and frame len update
+        // as the seek only takes effect after the current frame is done
+        self.decoder.seek_samples(pos)?;
+        Ok(())
     }
 }
 
