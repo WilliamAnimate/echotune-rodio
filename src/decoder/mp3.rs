@@ -4,7 +4,7 @@ use std::time::Duration;
 use crate::source::SeekError;
 use crate::Source;
 
-use minimp3::Decoder;
+use minimp3::SeekDecoder;
 use minimp3::Frame;
 use minimp3_fixed as minimp3;
 
@@ -12,8 +12,7 @@ pub struct Mp3Decoder<R>
 where
     R: Read + Seek,
 {
-    // decoder: SeekDecoder<R>,
-    decoder: Decoder<R>,
+    decoder: SeekDecoder<R>,
     current_frame: Frame,
     current_frame_offset: usize,
 }
@@ -26,14 +25,12 @@ where
         if !is_mp3(data.by_ref()) {
             return Err(data);
         }
-        // let mut decoder = SeekDecoder::new(data)
-        let mut decoder = Decoder::new(data);
+        let mut decoder = SeekDecoder::new(data)
         // parameters are correct and minimp3 is used correctly
         // thus if we crash here one of these invariants is broken:
-        // .expect("should be able to allocate memory, perform IO");
-        // let current_frame = decoder.decode_frame()
-        let current_frame = decoder.next_frame()
-            // the reader makes enough data available therefore 
+            .expect("should be able to allocate memory, perform IO");
+        let current_frame = decoder.decode_frame()
+            // the reader makes enough data available therefore
             // if we crash here the invariant broken is:
             .expect("data should not corrupt");
 
@@ -79,7 +76,10 @@ where
         let pos = (pos.as_secs_f32() * self.sample_rate() as f32) as u64;
         // do not trigger a sample_rate, channels and frame len update
         // as the seek only takes effect after the current frame is done
-        self.decoder.seek_samples(pos)?;
+        self.decoder.seek_samples(pos)
+            // there is no guarntee that this code is going to work, like at all, therefore
+            // if we crash here, the invariant broken is:
+            .expect("minimp3 c library shouldn't throw error because you probably caused ub:wqa");
         Ok(())
     }
 }
@@ -92,8 +92,7 @@ where
 
     fn next(&mut self) -> Option<i16> {
         if self.current_frame_offset == self.current_frame_len().unwrap() {
-            if let Ok(frame) = self.decoder.next_frame() {
-                // if let Ok(frame) = self.decoder.decode_frame() {
+            if let Ok(frame) = self.decoder.decode_frame() {
                 self.current_frame = frame;
                 self.current_frame_offset = 0;
             } else {
@@ -114,8 +113,13 @@ where
     R: Read + Seek,
 {
     let stream_pos = data.seek(SeekFrom::Current(0)).unwrap();
-    let mut decoder = Decoder::new(data.by_ref());
-    let ok = decoder.next_frame().is_ok();
+    // TODO(echotune): given that echotune uses its own in-house solution for determing file types
+    // (which isn't as reliable as this one, because echotune simply checks the file signature, as
+    // opposed to trying to decode a frame)
+    // but yeah yk wtf who cares actually this uses methods needed for playing in the first place
+    // it only increases binary size by like 100 bytes nobody fucking cares ettc
+    let mut decoder = SeekDecoder::new(data.by_ref()).unwrap();
+    let ok = decoder.decode_frame().is_ok();
     data.seek(SeekFrom::Start(stream_pos)).unwrap();
 
     ok
