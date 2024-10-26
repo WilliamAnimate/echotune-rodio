@@ -20,7 +20,7 @@ crossbeam-channel = { version = "0.5.8", optional = true }
 thiserror = "1.0.49"
 
 [features]
-default = ["flac", "vorbis", "wav", "mp3"]
+default = ["flac", "vorbis", "wav", "minimp3"]
 
 flac = ["claxon"]
 vorbis = ["lewton"]
