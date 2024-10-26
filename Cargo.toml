@@ -14,7 +14,7 @@ cpal = "0.15.3"
 claxon = { version = "0.4.2", optional = true }
 hound = { version = "3.3.1", optional = true }
 lewton = { version = "0.10", optional = true }
-minimp3_fixed = { version = "0.5.4", optional = true}
+minimp3_fixed = { git = "https://github.com/dvdsk/minimp3-rs.git", optional = true }
 symphonia = { version = "0.5.4", optional = true, default-features = false }
 crossbeam-channel = { version = "0.5.8", optional = true }
 
@@ -24,9 +24,9 @@ tracing = { version = "0.1.40", optional = true }
 atomic_float = { version = "1.1.0", optional = true }
 
 [features]
-default = ["flac", "vorbis", "wav", "mp3"]
 tracing = ["dep:tracing"]
 experimental = ["dep:atomic_float"]
+default = ["flac", "vorbis", "wav", "minimp3"]
 
 flac = ["claxon"]
 vorbis = ["lewton"]
