@@ -14,7 +14,7 @@ cpal = "0.15.3"
 claxon = { version = "0.4.2", optional = true }
 hound = { version = "3.3.1", optional = true }
 lewton = { version = "0.10", optional = true }
-minimp3_fixed = { version = "0.5.4", optional = true}
+minimp3_fixed = { git = "https://github.com/dvdsk/minimp3-rs.git", rev = "5f5f9dd81f97efdefab01c1b1c8c43f876ee5b49", optional = true }
 symphonia = { version = "0.5.4", optional = true, default-features = false }
 crossbeam-channel = { version = "0.5.8", optional = true }
 thiserror = "1.0.49"
