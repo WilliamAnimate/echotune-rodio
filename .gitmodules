@@ -1,0 +1,4 @@
+[submodule "minimp3-fixed"]
+	path = minimp3-fixed
+	url = https://github.com/williamanimate/echotune-minimp3-rs-fixed
+    branch = upstream-stable
