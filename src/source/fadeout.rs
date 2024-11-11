@@ -2,50 +2,50 @@ use std::time::Duration;
 
 use crate::{Sample, Source};
 
-use super::SeekError;
+use super::{linear_ramp::linear_gain_ramp, LinearGainRamp, SeekError};
 
-/// This is the same as [`skippable`](crate::source::skippable) see its docs
-pub fn stoppable<I>(source: I) -> Stoppable<I> {
-    Stoppable {
-        input: source,
-        stopped: false,
+/// Internal function that builds a `FadeOut` object.
+pub fn fadeout<I>(input: I, duration: Duration) -> FadeOut<I>
+where
+    I: Source,
+    I::Item: Sample,
+{
+    FadeOut {
+        input: linear_gain_ramp(input, duration, 1.0f32, 0.0f32, true),
     }
 }
 
-/// This is the same as [`Skippable`](crate::source::Skippable) see its docs
+/// Filter that modifies lowers the volume to silence over a time period.
 #[derive(Clone, Debug)]
-pub struct Stoppable<I> {
-    input: I,
-    stopped: bool,
+pub struct FadeOut<I> {
+    input: LinearGainRamp<I>,
 }
 
-impl<I> Stoppable<I> {
-    /// Stops the sound.
-    #[inline]
-    pub fn stop(&mut self) {
-        self.stopped = true;
-    }
-
+impl<I> FadeOut<I>
+where
+    I: Source,
+    I::Item: Sample,
+{
     /// Returns a reference to the inner source.
     #[inline]
     pub fn inner(&self) -> &I {
-        &self.input
+        self.input.inner()
     }
 
     /// Returns a mutable reference to the inner source.
     #[inline]
     pub fn inner_mut(&mut self) -> &mut I {
-        &mut self.input
+        self.input.inner_mut()
     }
 
     /// Returns the inner source.
     #[inline]
     pub fn into_inner(self) -> I {
-        self.input
+        self.input.into_inner()
     }
 }
 
-impl<I> Iterator for Stoppable<I>
+impl<I> Iterator for FadeOut<I>
 where
     I: Source,
     I::Item: Sample,
@@ -54,11 +54,7 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<I::Item> {
-        if self.stopped {
-            None
-        } else {
-            self.input.next()
-        }
+        self.input.next()
     }
 
     #[inline]
@@ -67,33 +63,40 @@ where
     }
 }
 
-impl<I> Source for Stoppable<I>
+impl<I> ExactSizeIterator for FadeOut<I>
+where
+    I: Source + ExactSizeIterator,
+    I::Item: Sample,
+{
+}
+
+impl<I> Source for FadeOut<I>
 where
     I: Source,
     I::Item: Sample,
 {
     #[inline]
     fn current_frame_len(&self) -> Option<usize> {
-        self.input.current_frame_len()
+        self.inner().current_frame_len()
     }
 
     #[inline]
     fn channels(&self) -> u16 {
-        self.input.channels()
+        self.inner().channels()
     }
 
     #[inline]
     fn sample_rate(&self) -> u32 {
-        self.input.sample_rate()
+        self.inner().sample_rate()
     }
 
     #[inline]
     fn total_duration(&self) -> Option<Duration> {
-        self.input.total_duration()
+        self.inner().total_duration()
     }
 
     #[inline]
     fn try_seek(&mut self, pos: Duration) -> Result<(), SeekError> {
-        self.input.try_seek(pos)
+        self.inner_mut().try_seek(pos)
     }
 }
