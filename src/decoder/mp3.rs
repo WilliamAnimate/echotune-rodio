@@ -113,8 +113,8 @@ where
     R: Read + Seek,
 {
     let stream_pos = data.seek(SeekFrom::Current(0)).unwrap();
-    // TODO(echotune): given that echotune uses its own in-house solution for determing file types
-    // (which isn't as reliable as this one, because echotune simply checks the file signature, as
+    // TODO(encore): given that encore uses its own in-house solution for determing file types
+    // (which isn't as reliable as this one, because encore simply checks the file signature, as
     // opposed to trying to decode a frame)
     // but yeah yk wtf who cares actually this uses methods needed for playing in the first place
     // it only increases binary size by like 100 bytes nobody fucking cares ettc
