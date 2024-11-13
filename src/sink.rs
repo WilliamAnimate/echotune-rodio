@@ -131,7 +131,7 @@ impl Sink {
             .periodic_access(Duration::from_millis(5), move |src| {
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
-                                        *controls.position.lock().unwrap() = Duration::ZERO;
+                    *controls.position.lock().unwrap() = Duration::ZERO;
                 }
                 {
                     let mut to_clear = controls.to_clear.lock().unwrap();
@@ -180,10 +180,20 @@ impl Sink {
         *self.controls.volume.lock().unwrap() = value;
     }
 
-    /// Gets the speed of the sound.
+    /// Changes the play speed of the sound. Does not adjust the samples, only the playback speed.
     ///
-    /// The value `1.0` is the "normal" speed (unfiltered input). Any value other than `1.0` will
-    /// change the play speed of the sound.
+    /// # Note:
+    /// 1. **Increasing the speed will increase the pitch by the same factor**
+    /// - If you set the speed to 0.5 this will halve the frequency of the sound
+    ///   lowering its pitch.
+    /// - If you set the speed to 2 the frequency will double raising the
+    ///   pitch of the sound.
+    /// 2. **Change in the speed affect the total duration inversely**
+    /// - If you set the speed to 0.5, the total duration will be twice as long.
+    /// - If you set the speed to 2 the total duration will be halve of what it
+    ///   was.
+    ///
+    /// See [`Speed`] for details
     #[inline]
     pub fn speed(&self) -> f32 {
         *self.controls.speed.lock().unwrap()
@@ -193,6 +203,14 @@ impl Sink {
     ///
     /// The value `1.0` is the "normal" speed (unfiltered input). Any value other than `1.0` will
     /// change the play speed of the sound.
+    ///
+    /// #### Note:
+    /// 1. **Increasing the speed would also increase the pitch by the same factor**
+    /// - If you increased set the speed to 0.5, the frequency would be slower (0.5x the original frequency) .
+    /// - Also if you set the speed to 1.5 the frequency would be faster ( 1.5x the original frequency).
+    /// 2. **Change in the speed would affect your total duration inversely**
+    /// - if you set the speed by 0.5, your total duration would be (2x the original total duration) longer.
+    /// - Also if you set the speed to 2 the total duration would be (0.5 the original total_duration) shorter
     #[inline]
     pub fn set_speed(&self, value: f32) {
         *self.controls.speed.lock().unwrap() = value;
@@ -221,10 +239,10 @@ impl Sink {
     ///
     /// # Errors
     /// This function will return [`SeekError::NotSupported`] if one of the underlying
-    /// sources does not support seeking.  
+    /// sources does not support seeking.
     ///
     /// It will return an error if an implementation ran
-    /// into one during the seek.  
+    /// into one during the seek.
     ///
     /// When seeking beyond the end of a source this
     /// function might return an error if the duration of the source is not known.
@@ -238,8 +256,11 @@ impl Sink {
         }
 
         match feedback.recv() {
-            Ok(seek_res) => seek_res,
-            // The feedback channel closed. Probably another seekorder was set
+            Ok(seek_res) => {
+                *self.controls.position.lock().unwrap() = pos;
+                seek_res
+            }
+            // The feedback channel closed. Probably another SeekOrder was set
             // invalidating this one and closing the feedback channel
             // ... or the audio thread panicked.
             Err(_) => Ok(()),
