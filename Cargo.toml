@@ -10,7 +10,6 @@ exclude = ["assets/**", "tests/**"]
 edition = "2021"
 
 [dependencies]
-cpal = "0.15.3"
 claxon = { version = "0.4.2", optional = true }
 hound = { version = "3.3.1", optional = true }
 lewton = { version = "0.10", optional = true }
@@ -18,6 +17,12 @@ minimp3_fixed = { version = "0.5.4", optional = true}
 symphonia = { version = "0.5.4", optional = true, default-features = false }
 crossbeam-channel = { version = "0.5.8", optional = true }
 thiserror = "1.0.49"
+
+[target.'cfg(linux)'.dependencies]
+cpal = { version = "0.15.3", features = [ "jack" ] }
+
+[target.'cfg(not(linux))'.dependencies]
+cpal = { version = "0.15.3" }
 
 [features]
 default = ["flac", "vorbis", "wav", "mp3"]
